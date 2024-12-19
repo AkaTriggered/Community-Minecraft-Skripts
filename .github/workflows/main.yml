@@ -1,9 +1,9 @@
-name: Track .sk Files on GitHub
+name: Track Minecraft Skripts From Github
 
 on:
   schedule:
     - cron: '0 0 * * *'  # Runs every day at midnight
-  workflow_dispatch: # Allows manual triggering
+  workflow_dispatch:  # Allows manual triggering
 
 jobs:
   fetch-and-update:
@@ -21,23 +21,26 @@ jobs:
           curl -H "Authorization: token $GITHUB_TOKEN" \
                "https://api.github.com/search/code?q=extension:sk&per_page=100&page=1" \
                > results_page_1.json
-          # Handle pagination if there are more than 100 results
           curl -H "Authorization: token $GITHUB_TOKEN" \
                "https://api.github.com/search/code?q=extension:sk&per_page=100&page=2" \
                > results_page_2.json
-          # Add more pages as needed based on the search results
 
       - name: Update README.md
         run: |
           echo "# GitHub Skript Files Tracker" > README.md
           echo "" >> README.md
-          echo "This is an automatically generated list of .sk files found on GitHub." >> README.md
+          echo "This is an automatically generated list of `.sk` files found on GitHub." >> README.md
           echo "" >> README.md
-          echo "## Skript Files:" >> README.md
+          echo "## List of Skript Files:" >> README.md
           echo "" >> README.md
           
-          cat results_page_1.json | jq -r '.items[] | "* [\(.name)](\(.html_url)) in [\(.repository.full_name)](\(.repository.html_url))"' >> README.md
-          cat results_page_2.json | jq -r '.items[] | "* [\(.name)](\(.html_url)) in [\(.repository.full_name)](\(.repository.html_url))"' >> README.md
+          # Add page 1 results to README
+          echo "### Page 1 Results:" >> README.md
+          cat results_page_1.json | jq -r '.items[] | "- \(.name): \(.path)"' >> README.md
+          
+          echo "" >> README.md
+          echo "### Page 2 Results:" >> README.md
+          cat results_page_2.json | jq -r '.items[] | "- \(.name): \(.path)"' >> README.md
           
           echo "" >> README.md
           echo "Last Updated: $(date)" >> README.md
@@ -48,7 +51,7 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           if [ -n "$(git status --porcelain)" ]; then
             git add README.md
-            git commit -m "Update README with latest .sk files from GitHub"
+            git commit -m "latest .sk files from GitHub"
             git push
           else
             echo "No changes to commit"
