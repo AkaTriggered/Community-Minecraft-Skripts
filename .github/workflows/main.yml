@@ -1,4 +1,4 @@
-name: Tracks Every Minecraft Skript Files On Github
+name: Tracks Every Minecraft Skript which exists on github
 
 on:
   schedule:
@@ -37,15 +37,15 @@ jobs:
               break
             fi
 
-            # Append the current page results to the all_files variable
-            current_files=$(echo "$response" | jq -r '.items[] | "* [\(.name)](\(.html_url)) in [\(.repository.full_name)](\(.repository.html_url))"')
+            # Filter and append the current page results to the all_files variable
+            current_files=$(echo "$response" | jq -r '.items[] | select(.name | endswith(".sk")) | "* [\(.name)](\(.html_url)) in [\(.repository.full_name)](\(.repository.html_url))"')
             all_files="$all_files\n$current_files"
 
             # Increment the page number
             page=$((page + 1))
           done
 
-          # Save the results to a JSON file
+          # Save the results to a text file
           echo "$all_files" > results.txt
 
       - name: Update README.md
