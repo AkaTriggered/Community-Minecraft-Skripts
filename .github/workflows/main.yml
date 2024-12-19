@@ -23,9 +23,9 @@ jobs:
 
       - name: Parse Results
         run: |
-          echo "# Skript Files List" > skript_list.md
-          echo "" >> skript_list.md
-          cat results.json | jq -r '.items[] | "* [\(.name)](\(.html_url)) in [\(.repository.full_name)](\(.repository.html_url))"' >> skript_list.md
+          echo "# Skript Files List" > README.md
+          echo "" >> README.md
+          cat results.json | jq -r '.items[] | "* [\(.name)](\(.html_url)) in [\(.repository.full_name)](\(.repository.html_url))"' >> README.md
 
       - name: Commit Changes
         run: |
