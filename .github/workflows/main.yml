@@ -1,4 +1,4 @@
-name: Tracks Every Minecraft Skript which exists on github
+name: Tracks Every Minecraft Skript Which Exists On Github
 
 on:
   schedule:
@@ -19,7 +19,7 @@ jobs:
         run: |
           echo "Fetching Skript files..."
 
-          # Initialize an empty array for storing all the results
+          # Initialize an empty string for storing all the results
           all_files=""
 
           # Initialize page number and set maximum results per page
@@ -38,7 +38,7 @@ jobs:
             fi
 
             # Filter and append the current page results to the all_files variable
-            current_files=$(echo "$response" | jq -r '.items[] | select(.name | endswith(".sk")) | "* [\(.name)](\(.html_url)) in [\(.repository.full_name)](\(.repository.html_url))"')
+            current_files=$(echo "$response" | jq -r '.items[] | select(.name | endswith(".sk")) | "* [\(.name)](\(.html_url))"')
             all_files="$all_files\n$current_files"
 
             # Increment the page number
