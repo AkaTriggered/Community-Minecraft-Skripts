@@ -1,47 +1,62 @@
-name: Track Minecraft Skripts From Github
+name: Tracks Every Minecraft Skript Files On Github
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Runs every day at midnight
-  workflow_dispatch:  # Allows manual triggering
+    - cron: '0 0 * * *' # Runs daily
+  workflow_dispatch: # Allows manual triggering
 
 jobs:
-  fetch-and-update:
+  fetch-and-update-readme:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Fetch .sk Files from GitHub
+      - name: Fetch All `.sk` Files from GitHub
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Fetching .sk files from GitHub..."
-          curl -H "Authorization: token $GITHUB_TOKEN" \
-               "https://api.github.com/search/code?q=extension:sk&per_page=100&page=1" \
-               > results_page_1.json
-          curl -H "Authorization: token $GITHUB_TOKEN" \
-               "https://api.github.com/search/code?q=extension:sk&per_page=100&page=2" \
-               > results_page_2.json
+          echo "Fetching Skript files..."
+
+          # Initialize an empty array for storing all the results
+          all_files=""
+
+          # Initialize page number and set maximum results per page
+          page=1
+          per_page=100
+          
+          # Fetch all pages of results
+          while : ; do
+            # Fetch the page of results
+            response=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+              "https://api.github.com/search/code?q=extension:sk&per_page=$per_page&page=$page")
+            
+            # Check if there are no results
+            if [[ $(echo "$response" | jq -r '.items | length') -eq 0 ]]; then
+              break
+            fi
+
+            # Append the current page results to the all_files variable
+            current_files=$(echo "$response" | jq -r '.items[] | "* [\(.name)](\(.html_url)) in [\(.repository.full_name)](\(.repository.html_url))"')
+            all_files="$all_files\n$current_files"
+
+            # Increment the page number
+            page=$((page + 1))
+          done
+
+          # Save the results to a JSON file
+          echo "$all_files" > results.txt
 
       - name: Update README.md
         run: |
-          echo "# GitHub Skript Files Tracker" > README.md
+          echo "# Skript Files Collection" > README.md
           echo "" >> README.md
-          echo "This is an automatically generated list of `.sk` files found on GitHub." >> README.md
+          echo "This list is automatically updated daily with public \`.sk\` files found on GitHub." >> README.md
           echo "" >> README.md
-          echo "## List of Skript Files:" >> README.md
+          echo "## Skript Files:" >> README.md
           echo "" >> README.md
-          
-          # Add page 1 results to README (with correct clickable file links)
-          echo "### Page 1 Results:" >> README.md
-          cat results_page_1.json | jq -r '.items[] | "- [\(.name)](https://github.com/\(.repository.full_name)/blob/\(.repository.default_branch)/\(.path))"' >> README.md
-          
-          echo "" >> README.md
-          echo "### Page 2 Results:" >> README.md
-          cat results_page_2.json | jq -r '.items[] | "- [\(.name)](https://github.com/\(.repository.full_name)/blob/\(.repository.default_branch)/\(.path))"' >> README.md
-          
+          cat results.txt >> README.md
           echo "" >> README.md
           echo "Last Updated: $(date)" >> README.md
 
@@ -51,7 +66,7 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           if [ -n "$(git status --porcelain)" ]; then
             git add README.md
-            git commit -m "Latest .sk files from GitHub"
+            git commit -m "Update README with latest Skript files"
             git push
           else
             echo "No changes to commit"
