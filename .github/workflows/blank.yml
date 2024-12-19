@@ -1,0 +1,36 @@
+name: Fetch Skript Files
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Runs daily
+  workflow_dispatch: # Manual trigger option
+
+jobs:
+  fetch-skript-files:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Fetch `.sk` Files from GitHub
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -H "Authorization: token $GITHUB_TOKEN" \
+               "https://api.github.com/search/code?q=extension:sk&per_page=100" \
+               > results.json
+
+      - name: Parse Results
+        run: |
+          echo "# Skript Files List" > skript_list.md
+          echo "" >> skript_list.md
+          cat results.json | jq -r '.items[] | "* [\(.name)](\(.html_url)) in [\(.repository.full_name)](\(.repository.html_url))"' >> skript_list.md
+
+      - name: Commit Changes
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git add skript_list.md
+          git commit -m "Update Skript files list"
+          git push
