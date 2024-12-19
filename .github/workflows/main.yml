@@ -34,7 +34,7 @@ jobs:
           echo "## List of Skript Files:" >> README.md
           echo "" >> README.md
           
-          # Add page 1 results to README (with clickable file names)
+          # Add page 1 results to README (with correct clickable file links)
           echo "### Page 1 Results:" >> README.md
           cat results_page_1.json | jq -r '.items[] | "- [\(.name)](https://github.com/\(.repository.full_name)/blob/\(.repository.default_branch)/\(.path))"' >> README.md
           
@@ -51,7 +51,7 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           if [ -n "$(git status --porcelain)" ]; then
             git add README.md
-            git commit -m "latest .sk files from GitHub"
+            git commit -m "Latest .sk files from GitHub"
             git push
           else
             echo "No changes to commit"
