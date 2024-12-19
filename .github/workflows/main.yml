@@ -1,12 +1,11 @@
-name: Fetch Skript Files
-
+name: Fetches Skripts From entire github
 on:
   schedule:
     - cron: '0 0 * * *' # Runs daily
-  workflow_dispatch: # Manual trigger option
+  workflow_dispatch: # Allows manual triggering
 
 jobs:
-  fetch-skript-files:
+  fetch-and-update-readme:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,21 +16,22 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          echo "Fetching Skript files..."
           curl -H "Authorization: token $GITHUB_TOKEN" \
                "https://api.github.com/search/code?q=extension:sk&per_page=100" \
                > results.json
 
       - name: Update README.md
         run: |
-          # Extract .sk file data from API results and format it as markdown
-          echo "## Skript Files List" > skript_section.md
-          echo "" >> skript_section.md
-          cat results.json | jq -r '.items[] | "* [\(.name)](\(.html_url)) in [\(.repository.full_name)](\(.repository.html_url))"' >> skript_section.md
-
-          # Insert or replace the Skript list section in README.md
-          awk '/## Skript Files List/{flag=1;print;next} /^## /{flag=0} !flag' README.md > temp.md || true
-          cat temp.md skript_section.md > README.md
-          rm temp.md skript_section.md
+          echo "# Skript Files Collection" > README.md
+          echo "" >> README.md
+          echo "This list is automatically updated daily with public \`.sk\` files found on GitHub." >> README.md
+          echo "" >> README.md
+          echo "## Skript Files:" >> README.md
+          echo "" >> README.md
+          cat results.json | jq -r '.items[] | "* [\(.name)](\(.html_url))"' >> README.md
+          echo "" >> README.md
+          echo "Last Updated: $(date)" >> README.md
 
       - name: Commit Changes
         run: |
@@ -39,7 +39,7 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           if [ -n "$(git status --porcelain)" ]; then
             git add README.md
-            git commit -m "Update Skript files list in README.md"
+            git commit -m "Update README with latest Skript files"
             git push
           else
             echo "No changes to commit"
