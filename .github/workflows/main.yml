@@ -21,16 +21,26 @@ jobs:
                "https://api.github.com/search/code?q=extension:sk&per_page=100" \
                > results.json
 
-      - name: Parse Results
+      - name: Update README.md
         run: |
-          echo "# Skript Files List" > README.md
-          echo "" >> README.md
-          cat results.json | jq -r '.items[] | "* [\(.name)](\(.html_url)) in [\(.repository.full_name)](\(.repository.html_url))"' >> README.md
+          # Extract .sk file data from API results and format it as markdown
+          echo "## Skript Files List" > skript_section.md
+          echo "" >> skript_section.md
+          cat results.json | jq -r '.items[] | "* [\(.name)](\(.html_url)) in [\(.repository.full_name)](\(.repository.html_url))"' >> skript_section.md
+
+          # Insert or replace the Skript list section in README.md
+          awk '/## Skript Files List/{flag=1;print;next} /^## /{flag=0} !flag' README.md > temp.md || true
+          cat temp.md skript_section.md > README.md
+          rm temp.md skript_section.md
 
       - name: Commit Changes
         run: |
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git add skript_list.md
-          git commit -m "Update Skript files list"
-          git push
+          if [ -n "$(git status --porcelain)" ]; then
+            git add README.md
+            git commit -m "Update Skript files list in README.md"
+            git push
+          else
+            echo "No changes to commit"
+          fi
